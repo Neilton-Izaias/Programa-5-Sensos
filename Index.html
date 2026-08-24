@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Auditoria 5S</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js para Gráficos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SheetJS para exportação em Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- PWA Manifest link -->
+  <link rel="manifest" href="manifest.json">
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+  <!-- Cabeçalho Principal -->
+  <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="bg-teal-500 p-2 rounded-lg text-slate-900 font-bold">
+          <i class="fa-solid fa-clipboard-check text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold leading-tight" id="headerCompanyName">Auditoria 5S Pro</h1>
+          <p class="text-xs text-slate-400">Gestão de Qualidade & Melhoria Contínua</p>
+        </div>
+      </div>
+      
+      <!-- Navegação por Abas -->
+      <nav class="flex space-x-1 mt-3 sm:mt-0 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+        <button onclick="switchTab('cadastro')" id="tab-cadastro" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 bg-teal-600 text-white">
+          <i class="fa-solid fa-sliders"></i><span>1. Cadastros</span>
+        </button>
+        <button onclick="switchTab('auditoria')" id="tab-auditoria" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 hover:bg-slate-800 text-slate-300">
+          <i class="fa-solid fa-list-check"></i><span>2. Auditoria</span>
+        </button>
+        <button onclick="switchTab('resultados')" id="tab-resultados" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 hover:bg-slate-800 text-slate-300">
+          <i class="fa-solid fa-chart-pie"></i><span>3. Resultados</span>
+        </button>
+        <button onclick="switchTab('plano')" id="tab-plano" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition flex items-center space-x-2 hover:bg-slate-800 text-slate-300">
+          <i class="fa-solid fa-triangle-exclamation"></i><span>4. Plano de Ação</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+
+    <!-- TELA 1: CADASTROS E PERGUNTAS -->
+    <section id="screen-cadastro" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Configuração da Empresa -->
+        <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200">
+          <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
+            <i class="fa-solid fa-building text-teal-600"></i><span>Empresa & Período</span>
+          </h2>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nome da Empresa</label>
+              <input type="text" id="companyName" class="w-full p-2 border rounded-lg text-sm focus:ring-2 focus:ring-teal-500" placeholder="Ex: Minha Empresa S.A." onchange="saveConfig()">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Data/Ciclo da Auditoria</label>
+              <input type="date" id="auditDate" class="w-full p-2 border rounded-lg text-sm focus:ring-2 focus:ring-teal-500" onchange="saveConfig()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Cadastro de Setores -->
+        <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200">
+          <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
+            <i class="fa-solid fa-sitemap text-teal-600"></i><span>Setores Auditados</span>
+          </h2>
+          <div class="flex space-x-2 mb-3">
+            <input type="text" id="newSectorInput" class="flex-1 p-2 border rounded-lg text-sm" placeholder="Novo setor...">
+            <button onclick="addSector()" class="bg-teal-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-teal-700"><i class="fa-solid fa-plus"></i></button>
+          </div>
+          <ul id="sectorsList" class="space-y-2 max-h-40 overflow-y-auto"></ul>
+        </div>
+
+        <!-- Cadastro de Auditores -->
+        <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200">
+          <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
+            <i class="fa-solid fa-user-gear text-teal-600"></i><span>Auditores</span>
+          </h2>
+          <div class="flex space-x-2 mb-3">
+            <input type="text" id="newAuditorInput" class="flex-1 p-2 border rounded-lg text-sm" placeholder="Nome do auditor...">
+            <button onclick="addAuditor()" class="bg-teal-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-teal-700"><i class="fa-solid fa-plus"></i></button>
+          </div>
+          <ul id="auditorsList" class="space-y-2 max-h-40 overflow-y-auto"></ul>
+        </div>
+      </div>
+
+      <!-- Gerenciamento de Perguntas do 5S -->
+      <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200">
+        <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+          <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+            <i class="fa-solid fa-list-ol text-teal-600"></i><span>Banco de Questões do 5S</span>
+          </h2>
+          <button onclick="openQuestionModal()" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 flex items-center space-x-1">
+            <i class="fa-solid fa-plus"></i><span>Nova Questão</span>
+          </button>
+        </div>
+
+        <div id="questionsContainer" class="space-y-6"></div>
+      </div>
+    </section>
+
+    <!-- TELA 2: AUDITORIA (FORMULÁRIO) -->
+    <section id="screen-auditoria" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Selecione o Setor para Auditar *</label>
+          <select id="auditSectorSelect" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50 font-semibold text-slate-800" onchange="loadAuditForm()">
+            <option value="">-- Selecione o Setor --</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Auditor Responsável *</label>
+          <select id="auditAuditorSelect" class="w-full p-2.5 border rounded-lg text-sm bg-slate-50">
+            <option value="">-- Selecione o Auditor --</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="auditFormContainer" class="space-y-6">
+        <div class="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl text-center">
+          <i class="fa-solid fa-arrow-up text-2xl mb-2"></i>
+          <p class="font-semibold">Selecione um Setor acima para iniciar a avaliação das questões de 5S.</p>
+        </div>
+      </div>
+
+      <div id="auditSubmitBox" class="hidden flex justify-end">
+        <button onclick="saveAuditResponse()" class="bg-teal-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-teal-700 text-lg flex items-center space-x-2">
+          <i class="fa-solid fa-floppy-disk"></i><span>Salvar Auditoria do Setor</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TELA 3: RESULTADOS E BANCO LOCAL -->
+    <section id="screen-resultados" class="hidden space-y-6">
+      
+      <!-- Painel de Ações de Dados -->
+      <div class="bg-white p-4 rounded-xl shadow-md border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center space-x-2">
+          <h2 class="text-base font-bold text-slate-800">Relatório e Backup</h2>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="exportToExcel()" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-emerald-700 flex items-center space-x-1">
+            <i class="fa-solid fa-file-excel"></i><span>Exportar Excel</span>
+          </button>
+          <button onclick="exportJSONBackup()" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-blue-700 flex items-center space-x-1">
+            <i class="fa-solid fa-download"></i><span>Exportar Banco Local (.json)</span>
+          </button>
+          <label class="bg-purple-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-purple-700 cursor-pointer flex items-center space-x-1">
+            <i class="fa-solid fa-upload"></i><span>Importar Banco Local</span>
+            <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importJSONBackup(event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- Resumo Geral em Gráficos e Tabelas -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200 lg:col-span-1">
+          <h3 class="text-sm font-bold text-slate-700 mb-3 text-center">Desempenho Geral dos Sensos (%)</h3>
+          <div class="relative h-64">
+            <canvas id="radarChart"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200 lg:col-span-2 overflow-x-auto">
+          <h3 class="text-sm font-bold text-slate-700 mb-3">Matriz de Pontuação por Setor</h3>
+          <table class="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-800 text-white">
+                <th class="p-2 border">Setor</th>
+                <th class="p-2 border text-center">1S (Util.)</th>
+                <th class="p-2 border text-center">2S (Org.)</th>
+                <th class="p-2 border text-center">3S (Limp.)</th>
+                <th class="p-2 border text-center">4S (Padr.)</th>
+                <th class="p-2 border text-center">5S (Disc.)</th>
+                <th class="p-2 border text-center bg-slate-900">Média Geral</th>
+              </tr>
+            </thead>
+            <tbody id="resultsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Histórico de Auditorias Salvas -->
+      <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200">
+        <h3 class="text-sm font-bold text-slate-700 mb-3">Auditorias Registradas no Banco Local</h3>
+        <div id="historyContainer" class="space-y-3"></div>
+      </div>
+    </section>
+
+    <!-- TELA 4: PLANO DE AÇÃO -->
+    <section id="screen-plano" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200">
+        <div class="flex flex-wrap justify-between items-center mb-4 gap-2">
+          <div>
+            <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+              <i class="fa-solid fa-list-check text-red-500"></i><span>Plano de Ação Corretiva (Notas &lt; 4)</span>
+            </h2>
+            <p class="text-xs text-slate-500">Gerado automaticamente com base nas piores notas identificadas nas auditorias.</p>
+          </div>
+          <button onclick="exportActionPlanExcel()" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-emerald-700 flex items-center space-x-1">
+            <i class="fa-solid fa-file-excel"></i><span>Baixar Plano em Excel</span>
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-900 text-white">
+                <th class="p-2.5 border w-1/4">Menor Nota / Senso / Setor</th>
+                <th class="p-2.5 border w-24 text-center">Evidência</th>
+                <th class="p-2.5 border">O que deverá ser feito (Ação)</th>
+                <th class="p-2.5 border w-36">Responsável</th>
+                <th class="p-2.5 border w-32">Prazo</th>
+              </tr>
+            </thead>
+            <tbody id="actionPlanTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal de Edição/Adição de Questão -->
+  <div id="questionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6 space-y-4">
+      <h3 class="text-base font-bold text-slate-800" id="modalQuestionTitle">Nova Questão</h3>
+      <input type="hidden" id="modalQuestionId">
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Senso Relacionado</label>
+        <select id="modalQuestionSense" class="w-full p-2 border rounded-lg text-sm">
+          <option value="1S">1S - Seiri (Utilização)</option>
+          <option value="2S">2S - Seiton (Organização)</option>
+          <option value="3S">3S - Seiso (Limpeza)</option>
+          <option value="4S">4S - Seiketsu (Padronização)</option>
+          <option value="5S">5S - Shitsuke (Disciplina)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Texto da Pergunta</label>
+        <textarea id="modalQuestionText" rows="3" class="w-full p-2 border rounded-lg text-sm" placeholder="Digite a pergunta da auditoria..."></textarea>
+      </div>
+      <div class="flex justify-end space-x-2 pt-2">
+        <button onclick="closeQuestionModal()" class="px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-100">Cancelar</button>
+        <button onclick="saveQuestion()" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Visualizar Fotos Grandes -->
+  <div id="imageModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-4" onclick="closeImageModal()">
+    <img id="imageModalSrc" class="max-w-full max-h-full rounded-lg shadow-2xl">
+  </div>
+
+  <script>
+    // --- ESTADO INICIAL E ESTRUTURA DE DADOS ---
+    const DEFAULT_QUESTIONS = [
+      // 1S - Seiri
+      { id: 'q1', sense: '1S', text: 'Apenas ferramentas, materiais e documentos úteis e em uso estão no local?' },
+      { id: 'q2', sense: '1S', text: 'Itens obsoletos, danificados ou desnecessários foram descartados ou segregados?' },
+      { id: 'q3', sense: '1S', text: 'Os estoques/materiais em trânsito estão dentro da quantidade estritamente necessária?' },
+      // 2S - Seiton
+      { id: 'q4', sense: '2S', text: 'Cada ferramenta/objeto possui um local fixo, identificado e de fácil acesso?' },
+      { id: 'q5', sense: '2S', text: 'Existem demarcações visíveis para corredores, lixeiras e áreas de trabalho?' },
+      { id: 'q6', sense: '2S', text: 'Arquivos virtuais ou físicos estão organizados e rotulados adequadamente?' },
+      // 3S - Seiso
+      { id: 'q7', sense: '3S', text: 'Pisos, bancadas, máquinas e equipamentos estão limpos e sem acúmulo de sujeira?' },
+      { id: 'q8', sense: '3S', text: 'As fontes de sujeira ou vazamentos de óleo/água foram identificadas e contidas?' },
+      { id: 'q9', sense: '3S', text: 'Os utensílios de limpeza estão completos, limpos e guardados no local correto?' },
+      // 4S - Seiketsu
+      { id: 'q10', sense: '4S', text: 'Existem padrões visuais (etiquetas, cores, manuais) atualizados e seguidos?' },
+      { id: 'q11', sense: '4S', text: 'Os colaboradores utilizam os EPIs necessários e mantêm higiene adequada?' },
+      { id: 'q12', sense: '4S', text: 'As condições de iluminação, ventilação e ergonomia estão adequadas?' },
+      // 5S - Shitsuke
+      { id: 'q13', sense: '5S', text: 'As normas de segurança e procedimentos operacionais são seguidos rigorosamente?' },
+      { id: 'q14', sense: '5S', text: 'As ações corretivas das auditorias anteriores foram executadas no prazo?' },
+      { id: 'q15', sense: '5S', text: 'A equipe demonstra autodisciplina e engajamento na manutenção do 5S?' }
+    ];
+
+    let db = {
+      config: { companyName: 'Minha Empresa', auditDate: new Date().toISOString().split('T')[0] },
+      sectors: ['Produção', 'Almoxarifado', 'Escritório', 'Manutenção'],
+      auditors: ['Auditor Principal', 'Analista de Qualidade'],
+      questions: JSON.parse(JSON.stringify(DEFAULT_QUESTIONS)),
+      audits: [], // Array de avaliações realizadas
+      actionPlans: {} // Dados do plano de ação { auditId_qId: { what, who, date } }
+    };
+
+    let chartInstance = null;
+
+    // --- CARREGAMENTO INICIAL ---
+    window.addEventListener('DOMContentLoaded', () => {
+      loadDB();
+      renderAll();
+    });
+
+    function loadDB() {
+      const stored = localStorage.getItem('5s_audit_db');
+      if (stored) {
+        try { db = JSON.parse(stored); } catch (e) { console.error(e); }
+      }
+      if (!db.questions || db.questions.length === 0) db.questions = JSON.parse(JSON.stringify(DEFAULT_QUESTIONS));
+    }
+
+    function saveDB() {
+      localStorage.setItem('5s_audit_db', JSON.stringify(db));
+    }
+
+    function renderAll() {
+      // Header & Config
+      document.getElementById('companyName').value = db.config.companyName || '';
+      document.getElementById('auditDate').value = db.config.auditDate || '';
+      document.getElementById('headerCompanyName').innerText = db.config.companyName || 'Auditoria 5S Pro';
+
+      renderSectors();
+      renderAuditors();
+      renderQuestions();
+      populateAuditSelects();
+      renderResults();
+      renderActionPlan();
+    }
+
+    // --- NAVEGAÇÃO DE ABAS ---
+    function switchTab(tab) {
+      document.querySelectorAll('section[id^="screen-"]').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`screen-${tab}`).classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-teal-600', 'text-white');
+        btn.classList.add('hover:bg-slate-800', 'text-slate-300');
+      });
+
+      const activeBtn = document.getElementById(`tab-${tab}`);
+      activeBtn.classList.add('bg-teal-600', 'text-white');
+      activeBtn.classList.remove('hover:bg-slate-800', 'text-slate-300');
+
+      if (tab === 'resultados') renderResults();
+      if (tab === 'plano') renderActionPlan();
+    }
+
+    // --- GERENCIAMENTO DE TELA 1 (CADASTROS) ---
+    function saveConfig() {
+      db.config.companyName = document.getElementById('companyName').value;
+      db.config.auditDate = document.getElementById('auditDate').value;
+      document.getElementById('headerCompanyName').innerText = db.config.companyName || 'Auditoria 5S Pro';
+      saveDB();
+    }
+
+    function renderSectors() {
+      const list = document.getElementById('sectorsList');
+      list.innerHTML = db.sectors.map((s, idx) => `
+        <li class="flex justify-between items-center bg-slate-50 p-2 rounded border text-xs">
+          <span>${s}</span>
+          <button onclick="removeSector(${idx})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+        </li>
+      `).join('');
+    }
+
+    function addSector() {
+      const input = document.getElementById('newSectorInput');
+      if (input.value.trim()) {
+        db.sectors.push(input.value.trim());
+        input.value = '';
+        saveDB();
+        renderSectors();
+        populateAuditSelects();
+      }
+    }
+
+    function removeSector(idx) {
+      db.sectors.splice(idx, 1);
+      saveDB();
+      renderSectors();
+      populateAuditSelects();
+    }
+
+    function renderAuditors() {
+      const list = document.getElementById('auditorsList');
+      list.innerHTML = db.auditors.map((a, idx) => `
+        <li class="flex justify-between items-center bg-slate-50 p-2 rounded border text-xs">
+          <span>${a}</span>
+          <button onclick="removeAuditor(${idx})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+        </li>
+      `).join('');
+    }
+
+    function addAuditor() {
+      const input = document.getElementById('newAuditorInput');
+      if (input.value.trim()) {
+        db.auditors.push(input.value.trim());
+        input.value = '';
+        saveDB();
+        renderAuditors();
+        populateAuditSelects();
+      }
+    }
+
+    function removeAuditor(idx) {
+      db.auditors.splice(idx, 1);
+      saveDB();
+      renderAuditors();
+      populateAuditSelects();
+    }
+
+    // --- GERENCIAMENTO DE PERGUNTAS ---
+    function renderQuestions() {
+      const container = document.getElementById('questionsContainer');
+      const senses = ['1S', '2S', '3S', '4S', '5S'];
+      const senseLabels = {
+        '1S': '1S - Seiri (Utilização)',
+        '2S': '2S - Seiton (Organização)',
+        '3S': '3S - Seiso (Limpeza)',
+        '4S': '4S - Seiketsu (Padronização)',
+        '5S': '5S - Shitsuke (Disciplina)'
+      };
+
+      container.innerHTML = senses.map(sense => {
+        const senseQs = db.questions.filter(q => q.sense === sense);
+        return `
+          <div class="border rounded-xl p-4 bg-slate-50">
+            <h3 class="font-bold text-slate-800 text-sm mb-3 text-teal-700">${senseLabels[sense]}</h3>
+            <div class="space-y-2">
+              ${senseQs.map(q => `
+                <div class="flex items-start justify-between bg-white p-3 rounded-lg border shadow-sm text-xs">
+                  <p class="text-slate-700 flex-1 pr-4">${q.text}</p>
+                  <div class="flex space-x-2">
+                    <button onclick="openQuestionModal('${q.id}')" class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteQuestion('${q.id}')" class="text-red-600 hover:text-red-800"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openQuestionModal(id = null) {
+      document.getElementById('questionModal').classList.remove('hidden');
+      if (id) {
+        const q = db.questions.find(x => x.id === id);
+        document.getElementById('modalQuestionTitle').innerText = 'Editar Questão';
+        document.getElementById('modalQuestionId').value = q.id;
+        document.getElementById('modalQuestionSense').value = q.sense;
+        document.getElementById('modalQuestionText').value = q.text;
+      } else {
+        document.getElementById('modalQuestionTitle').innerText = 'Nova Questão';
+        document.getElementById('modalQuestionId').value = '';
+        document.getElementById('modalQuestionSense').value = '1S';
+        document.getElementById('modalQuestionText').value = '';
+      }
+    }
+
+    function closeQuestionModal() {
+      document.getElementById('questionModal').classList.add('hidden');
+    }
+
+    function saveQuestion() {
+      const id = document.getElementById('modalQuestionId').value;
+      const sense = document.getElementById('modalQuestionSense').value;
+      const text = document.getElementById('modalQuestionText').value.trim();
+
+      if (!text) return alert('Digite a pergunta!');
+
+      if (id) {
+        const q = db.questions.find(x => x.id === id);
+        q.sense = sense;
+        q.text = text;
+      } else {
+        db.questions.push({ id: 'q_' + Date.now(), sense, text });
+      }
+
+      saveDB();
+      renderQuestions();
+      closeQuestionModal();
+    }
+
+    function deleteQuestion(id) {
+      if (confirm('Deseja excluir esta questão?')) {
+        db.questions = db.questions.filter(x => x.id !== id);
+        saveDB();
+        renderQuestions();
+      }
+    }
+
+    // --- TELA 2: FORMULÁRIO DE AUDITORIA ---
+    function populateAuditSelects() {
+      const sSelect = document.getElementById('auditSectorSelect');
+      const aSelect = document.getElementById('auditAuditorSelect');
+
+      sSelect.innerHTML = '<option value="">-- Selecione o Setor --</option>' + 
+        db.sectors.map(s => `<option value="${s}">${s}</option>`).join('');
+
+      aSelect.innerHTML = '<option value="">-- Selecione o Auditor --</option>' + 
+        db.auditors.map(a => `<option value="${a}">${a}</option>`).join('');
+    }
+
+    let currentAuditResponses = {}; // { qId: { score: 5, photo: base64 } }
+
+    function loadAuditForm() {
+      const sector = document.getElementById('auditSectorSelect').value;
+      const container = document.getElementById('auditFormContainer');
+      const submitBox = document.getElementById('auditSubmitBox');
+
+      if (!sector) {
+        container.innerHTML = `<div class="bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl text-center"><i class="fa-solid fa-arrow-up text-2xl mb-2"></i><p class="font-semibold">Selecione um Setor acima para iniciar a avaliação.</p></div>`;
+        submitBox.classList.add('hidden');
+        return;
+      }
+
+      currentAuditResponses = {};
+      submitBox.classList.remove('hidden');
+
+      const senses = ['1S', '2S', '3S', '4S', '5S'];
+      const senseLabels = {
+        '1S': '1S - Seiri (Utilização)',
+        '2S': '2S - Seiton (Organização)',
+        '3S': '3S - Seiso (Limpeza)',
+        '4S': '4S - Seiketsu (Padronização)',
+        '5S': '5S - Shitsuke (Disciplina)'
+      };
+
+      container.innerHTML = senses.map(sense => {
+        const senseQs = db.questions.filter(q => q.sense === sense);
+        return `
+          <div class="bg-white p-5 rounded-xl shadow-md border border-slate-200">
+            <h3 class="font-bold text-slate-800 text-sm mb-4 pb-2 border-b text-teal-700">${senseLabels[sense]}</h3>
+            <div class="space-y-4">
+              ${senseQs.map(q => {
+                currentAuditResponses[q.id] = { score: 5, photo: null };
+                return `
+                  <div class="p-3 bg-slate-50 rounded-lg border space-y-3">
+                    <p class="text-xs font-semibold text-slate-800">${q.text}</p>
+                    <div class="flex flex-wrap items-center gap-4">
+                      <div class="flex items-center space-x-2">
+                        <label class="text-xs font-semibold text-slate-600">Nota (1 a 5):</label>
+                        <select onchange="updateAuditScore('${q.id}', this.value)" class="p-2 border rounded-lg text-sm bg-white font-bold text-slate-800 focus:ring-2 focus:ring-teal-500">
+                          <option value="5" selected>5 - Excelente / Padrão Ideal</option>
+                          <option value="4">4 - Bom / Pequenos Ajustes</option>
+                          <option value="3">3 - Regular / Atenção Necessária</option>
+                          <option value="2">2 - Ruim / Não Conforme</option>
+                          <option value="1">1 - Muito Ruim / Crítico</option>
+                        </select>
+                      </div>
+
+                      <!-- Campo de Foto para notas baixas -->
+                      <div id="photoContainer_${q.id}" class="hidden flex items-center space-x-3">
+                        <label class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer flex items-center space-x-1">
+                          <i class="fa-solid fa-camera"></i><span>Anexar Evidência</span>
+                          <input type="file" accept="image/*" class="hidden" onchange="handleImageUpload('${q.id}', this)">
+                        </label>
+                        <div id="photoPreview_${q.id}"></div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateAuditScore(qId, scoreVal) {
+      const score = parseInt(scoreVal);
+      currentAuditResponses[qId].score = score;
+      const photoDiv = document.getElementById(`photoContainer_${qId}`);
+
+      // Exibe anexo de foto se a nota for menor que 4 (ruim/regular)
+      if (score < 4) {
+        photoDiv.classList.remove('hidden');
+      } else {
+        photoDiv.classList.add('hidden');
+      }
+    }
+
+    function handleImageUpload(qId, input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+          // Redimensiona imagem para evitar travar o localStorage
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 600;
+            const scaleSize = MAX_WIDTH / img.width;
+            canvas.width = MAX_WIDTH;
+            canvas.height = img.height * scaleSize;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const resizedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+            currentAuditResponses[qId].photo = resizedBase64;
+            document.getElementById(`photoPreview_${qId}`).innerHTML = `
+              <img src="${resizedBase64}" onclick="openImageModal('${resizedBase64}')" class="h-10 w-10 object-cover rounded border cursor-pointer">
+            `;
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function saveAuditResponse() {
+      const sector = document.getElementById('auditSectorSelect').value;
+      const auditor = document.getElementById('auditAuditorSelect').value;
+
+      if (!sector || !auditor) return alert('Selecione o Setor e o Auditor!');
+
+      const newAudit = {
+        id: 'audit_' + Date.now(),
+        date: db.config.auditDate || new Date().toISOString().split('T')[0],
+        sector,
+        auditor,
+        responses: JSON.parse(JSON.stringify(currentAuditResponses))
+      };
+
+      // Substitui se já existir auditoria para este setor no mesmo dia
+      db.audits = db.audits.filter(a => !(a.sector === sector && a.date === newAudit.date));
+      db.audits.push(newAudit);
+
+      saveDB();
+      alert(`Auditoria do setor ${sector} salva com sucesso!`);
+      switchTab('resultados');
+    }
+
+    // --- TELA 3: RESULTADOS E MÁTRICES ---
+    function renderResults() {
+      const tbody = document.getElementById('resultsTableBody');
+      const senses = ['1S', '2S', '3S', '4S', '5S'];
+
+      if (db.audits.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">Nenhuma auditoria realizada até o momento.</td></tr>`;
+        renderChart([0,0,0,0,0]);
+        return;
+      }
+
+      let totalSenseScores = { '1S': 0, '2S': 0, '3S': 0, '4S': 0, '5S': 0 };
+      let senseCounts = { '1S': 0, '2S': 0, '3S': 0, '4S': 0, '5S': 0 };
+
+      tbody.innerHTML = db.sectors.map(sector => {
+        const audit = db.audits.slice().reverse().find(a => a.sector === sector);
+        if (!audit) {
+          return `<tr class="border-b"><td class="p-2 font-semibold">${sector}</td><td colspan="6" class="p-2 text-center text-slate-400">Pendente</td></tr>`;
+        }
+
+        let sectorTotals = { '1S': 0, '2S': 0, '3S': 0, '4S': 0, '5S': 0 };
+        let sectorCounts = { '1S': 0, '2S': 0, '3S': 0, '4S': 0, '5S': 0 };
+
+        Object.keys(audit.responses).forEach(qId => {
+          const q = db.questions.find(x => x.id === qId);
+          if (q) {
+            const resp = audit.responses[qId];
+            sectorTotals[q.sense] += resp.score;
+            sectorCounts[q.sense] += 1;
+
+            totalSenseScores[q.sense] += resp.score;
+            senseCounts[q.sense] += 1;
+          }
+        });
+
+        const averages = senses.map(s => sectorCounts[s] ? (sectorTotals[s] / sectorCounts[s]).toFixed(1) : '-');
+        const validAverages = averages.filter(a => a !== '-').map(Number);
+        const overallAvg = validAverages.length ? (validAverages.reduce((a,b)=>a+b,0) / validAverages.length).toFixed(1) : '-';
+
+        return `
+          <tr class="border-b bg-white hover:bg-slate-50">
+            <td class="p-2 font-semibold text-slate-800">${sector}</td>
+            ${averages.map(avg => `<td class="p-2 text-center font-bold ${avg < 3.5 ? 'text-red-600' : 'text-emerald-600'}">${avg}</td>`).join('')}
+            <td class="p-2 text-center font-bold bg-slate-100 text-slate-900">${overallAvg}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // Gráfico Radar
+      const globalSenseAverages = senses.map(s => senseCounts[s] ? Math.round((totalSenseScores[s] / (senseCounts[s] * 5)) * 100) : 0);
+      renderChart(globalSenseAverages);
+
+      // Histórico
+      renderHistory();
+    }
+
+    function renderChart(dataPercents) {
+      const ctx = document.getElementById('radarChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['1S Utilização', '2S Organização', '3S Limpeza', '4S Padronização', '5S Disciplina'],
+          datasets: [{
+            label: 'Aproveitamento %',
+            data: dataPercents,
+            backgroundColor: 'rgba(20, 184, 166, 0.2)',
+            borderColor: 'rgba(20, 184, 166, 1)',
+            pointBackgroundColor: 'rgba(15, 23, 42, 1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { r: { min: 0, max: 100 } }
+        }
+      });
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('historyContainer');
+      if (db.audits.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500">Nenhum registro encontrado.</p>';
+        return;
+      }
+
+      container.innerHTML = db.audits.slice().reverse().map(a => `
+        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-lg border text-xs">
+          <div>
+            <span class="font-bold text-slate-800">${a.sector}</span>
+            <span class="text-slate-500 ml-2">Data: ${a.date} | Auditor: ${a.auditor}</span>
+          </div>
+          <button onclick="deleteAudit('${a.id}')" class="text-red-500 hover:text-red-700 font-medium"><i class="fa-solid fa-trash"></i> Excluir</button>
+        </div>
+      `).join('');
+    }
+
+    function deleteAudit(id) {
+      if (confirm('Excluir este registro de auditoria?')) {
+        db.audits = db.audits.filter(a => a.id !== id);
+        saveDB();
+        renderResults();
+      }
+    }
+
+    // --- TELA 4: PLANO DE AÇÃO ---
+    function renderActionPlan() {
+      const tbody = document.getElementById('actionPlanTableBody');
+      let lowItems = [];
+
+      db.audits.forEach(audit => {
+        Object.keys(audit.responses).forEach(qId => {
+          const resp = audit.responses[qId];
+          if (resp.score < 4) { // Notas baixas (1, 2, 3)
+            const q = db.questions.find(x => x.id === qId);
+            if (q) {
+              lowItems.push({
+                key: `${audit.id}_${qId}`,
+                sector: audit.sector,
+                sense: q.sense,
+                score: resp.score,
+                text: q.text,
+                photo: resp.photo
+              });
+            }
+          }
+        });
+      });
+
+      if (lowItems.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Excelente! Nenhuma nota menor que 4 identificada. Nenhuma ação pendente.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lowItems.map(item => {
+        const actionData = db.actionPlans[item.key] || { what: '', who: '', date: '' };
+        return `
+          <tr class="border-b bg-white">
+            <td class="p-2">
+              <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${item.score <= 2 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'} mb-1">Nota: ${item.score} - ${item.sense}</span>
+              <p class="font-semibold text-slate-800">${item.sector}</p>
+              <p class="text-slate-500 text-[11px]">${item.text}</p>
+            </td>
+            <td class="p-2 text-center">
+              ${item.photo ? `<img src="${item.photo}" onclick="openImageModal('${item.photo}')" class="h-10 w-10 object-cover rounded border mx-auto cursor-pointer">` : '<span class="text-slate-400">-</span>'}
+            </td>
+            <td class="p-2">
+              <input type="text" value="${actionData.what}" onchange="updateActionPlan('${item.key}', 'what', this.value)" placeholder="Descreva a ação..." class="w-full p-1.5 border rounded text-xs">
+            </td>
+            <td class="p-2">
+              <input type="text" value="${actionData.who}" onchange="updateActionPlan('${item.key}', 'who', this.value)" placeholder="Responsável..." class="w-full p-1.5 border rounded text-xs">
+            </td>
+            <td class="p-2">
+              <input type="date" value="${actionData.date}" onchange="updateActionPlan('${item.key}', 'date', this.value)" class="w-full p-1.5 border rounded text-xs">
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateActionPlan(key, field, val) {
+      if (!db.actionPlans[key]) db.actionPlans[key] = { what: '', who: '', date: '' };
+      db.actionPlans[key][field] = val;
+      saveDB();
+    }
+
+    // --- MODAL DE FOTOS E EXPORTAÇÃO ---
+    function openImageModal(src) {
+      document.getElementById('imageModalSrc').src = src;
+      document.getElementById('imageModal').classList.remove('hidden');
+    }
+
+    function closeImageModal() {
+      document.getElementById('imageModal').classList.add('hidden');
+    }
+
+    // Exportar para Excel (SheetJS)
+    function exportToExcel() {
+      const wb = XLSX.utils.book_new();
+      
+      // Aba Matriz
+      const data = [
+        ['Empresa:', db.config.companyName],
+        ['Data:', db.config.auditDate],
+        [],
+        ['Setor', '1S Utilização', '2S Organização', '3S Limpeza', '4S Padronização', '5S Disciplina']
+      ];
+
+      db.sectors.forEach(s => {
+        const audit = db.audits.slice().reverse().find(a => a.sector === s);
+        if (audit) {
+          let row = [s];
+          ['1S','2S','3S','4S','5S'].forEach(sense => {
+            const qs = db.questions.filter(q => q.sense === sense);
+            let sum = 0, count = 0;
+            qs.forEach(q => {
+              if (audit.responses[q.id]) { sum += audit.responses[q.id].score; count++; }
+            });
+            row.push(count ? (sum/count).toFixed(1) : '-');
+          });
+          data.push(row);
+        }
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, 'Resumo 5S');
+      XLSX.writeFile(wb, `Auditoria_5S_${db.config.companyName}_${db.config.auditDate}.xlsx`);
+    }
+
+    function exportActionPlanExcel() {
+      const wb = XLSX.utils.book_new();
+      const data = [['Setor', 'Senso', 'Nota', 'Questão', 'Ação Necessária', 'Responsável', 'Prazo']];
+
+      db.audits.forEach(audit => {
+        Object.keys(audit.responses).forEach(qId => {
+          const resp = audit.responses[qId];
+          if (resp.score < 4) {
+            const q = db.questions.find(x => x.id === qId);
+            const plan = db.actionPlans[`${audit.id}_${qId}`] || {};
+            if (q) {
+              data.push([audit.sector, q.sense, resp.score, q.text, plan.what || '', plan.who || '', plan.date || '']);
+            }
+          }
+        });
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, 'Plano de Ação');
+      XLSX.writeFile(wb, `Plano_de_Acao_5S_${db.config.auditDate}.xlsx`);
+    }
+
+    // Exportar/Importar Backup JSON
+    function exportJSONBackup() {
+      const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Backup_5S_${db.config.companyName}_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+    }
+
+    function importJSONBackup(evt) {
+      const file = evt.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const imported = JSON.parse(e.target.result);
+            if (confirm('Deseja substituir o banco de dados atual pelas informações importadas?')) {
+              db = imported;
+              saveDB();
+              renderAll();
+              alert('Banco de dados importado com sucesso!');
+            }
+          } catch (err) {
+            alert('Arquivo JSON inválido!');
+          }
+        };
+        reader.readAsText(file);
+      }
+    }
+  </script>
+<script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker registrado:', reg.scope))
+          .catch(err => console.error('Erro ao registrar Service Worker:', err));
+      });
+    }
+  </script>
+</body>
+</html>
