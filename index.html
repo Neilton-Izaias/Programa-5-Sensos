@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema de Auditoria 5S</title>
+  
+  <!-- Ícone da Aba do Navegador (Favicon em SVG Embutido) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2314b8a6'/><path d='M30 52 L44 66 L72 34' stroke='white' stroke-width='10' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1048/1048953.png">
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Ícones -->
@@ -268,23 +273,18 @@
   <script>
     // --- ESTADO INICIAL E ESTRUTURA DE DADOS ---
     const DEFAULT_QUESTIONS = [
-      // 1S - Seiri
       { id: 'q1', sense: '1S', text: 'Apenas ferramentas, materiais e documentos úteis e em uso estão no local?' },
       { id: 'q2', sense: '1S', text: 'Itens obsoletos, danificados ou desnecessários foram descartados ou segregados?' },
       { id: 'q3', sense: '1S', text: 'Os estoques/materiais em trânsito estão dentro da quantidade estritamente necessária?' },
-      // 2S - Seiton
       { id: 'q4', sense: '2S', text: 'Cada ferramenta/objeto possui um local fixo, identificado e de fácil acesso?' },
       { id: 'q5', sense: '2S', text: 'Existem demarcações visíveis para corredores, lixeiras e áreas de trabalho?' },
       { id: 'q6', sense: '2S', text: 'Arquivos virtuais ou físicos estão organizados e rotulados adequadamente?' },
-      // 3S - Seiso
       { id: 'q7', sense: '3S', text: 'Pisos, bancadas, máquinas e equipamentos estão limpos e sem acúmulo de sujeira?' },
       { id: 'q8', sense: '3S', text: 'As fontes de sujeira ou vazamentos de óleo/água foram identificadas e contidas?' },
       { id: 'q9', sense: '3S', text: 'Os utensílios de limpeza estão completos, limpos e guardados no local correto?' },
-      // 4S - Seiketsu
       { id: 'q10', sense: '4S', text: 'Existem padrões visuais (etiquetas, cores, manuais) atualizados e seguidos?' },
       { id: 'q11', sense: '4S', text: 'Os colaboradores utilizam os EPIs necessários e mantêm higiene adequada?' },
       { id: 'q12', sense: '4S', text: 'As condições de iluminação, ventilação e ergonomia estão adequadas?' },
-      // 5S - Shitsuke
       { id: 'q13', sense: '5S', text: 'As normas de segurança e procedimentos operacionais são seguidos rigorosamente?' },
       { id: 'q14', sense: '5S', text: 'As ações corretivas das auditorias anteriores foram executadas no prazo?' },
       { id: 'q15', sense: '5S', text: 'A equipe demonstra autodisciplina e engajamento na manutenção do 5S?' }
@@ -295,13 +295,12 @@
       sectors: ['Produção', 'Almoxarifado', 'Escritório', 'Manutenção'],
       auditors: ['Auditor Principal', 'Analista de Qualidade'],
       questions: JSON.parse(JSON.stringify(DEFAULT_QUESTIONS)),
-      audits: [], // Array de avaliações realizadas
-      actionPlans: {} // Dados do plano de ação { auditId_qId: { what, who, date } }
+      audits: [],
+      actionPlans: {}
     };
 
     let chartInstance = null;
 
-    // --- CARREGAMENTO INICIAL ---
     window.addEventListener('DOMContentLoaded', () => {
       loadDB();
       renderAll();
@@ -320,7 +319,6 @@
     }
 
     function renderAll() {
-      // Header & Config
       document.getElementById('companyName').value = db.config.companyName || '';
       document.getElementById('auditDate').value = db.config.auditDate || '';
       document.getElementById('headerCompanyName').innerText = db.config.companyName || 'Auditoria 5S Pro';
@@ -333,7 +331,6 @@
       renderActionPlan();
     }
 
-    // --- NAVEGAÇÃO DE ABAS ---
     function switchTab(tab) {
       document.querySelectorAll('section[id^="screen-"]').forEach(el => el.classList.add('hidden'));
       document.getElementById(`screen-${tab}`).classList.remove('hidden');
@@ -351,7 +348,6 @@
       if (tab === 'plano') renderActionPlan();
     }
 
-    // --- GERENCIAMENTO DE TELA 1 (CADASTROS) ---
     function saveConfig() {
       db.config.companyName = document.getElementById('companyName').value;
       db.config.auditDate = document.getElementById('auditDate').value;
@@ -415,7 +411,6 @@
       populateAuditSelects();
     }
 
-    // --- GERENCIAMENTO DE PERGUNTAS ---
     function renderQuestions() {
       const container = document.getElementById('questionsContainer');
       const senses = ['1S', '2S', '3S', '4S', '5S'];
@@ -496,7 +491,6 @@
       }
     }
 
-    // --- TELA 2: FORMULÁRIO DE AUDITORIA ---
     function populateAuditSelects() {
       const sSelect = document.getElementById('auditSectorSelect');
       const aSelect = document.getElementById('auditAuditorSelect');
@@ -508,7 +502,7 @@
         db.auditors.map(a => `<option value="${a}">${a}</option>`).join('');
     }
 
-    let currentAuditResponses = {}; // { qId: { score: 5, photo: base64 } }
+    let currentAuditResponses = {};
 
     function loadAuditForm() {
       const sector = document.getElementById('auditSectorSelect').value;
@@ -556,7 +550,6 @@
                         </select>
                       </div>
 
-                      <!-- Campo de Foto para notas baixas -->
                       <div id="photoContainer_${q.id}" class="hidden flex items-center space-x-3">
                         <label class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer flex items-center space-x-1">
                           <i class="fa-solid fa-camera"></i><span>Anexar Evidência</span>
@@ -579,7 +572,6 @@
       currentAuditResponses[qId].score = score;
       const photoDiv = document.getElementById(`photoContainer_${qId}`);
 
-      // Exibe anexo de foto se a nota for menor que 4 (ruim/regular)
       if (score < 4) {
         photoDiv.classList.remove('hidden');
       } else {
@@ -593,7 +585,6 @@
         const reader = new FileReader();
 
         reader.onload = function(e) {
-          // Redimensiona imagem para evitar travar o localStorage
           const img = new Image();
           img.src = e.target.result;
           img.onload = function() {
@@ -631,7 +622,6 @@
         responses: JSON.parse(JSON.stringify(currentAuditResponses))
       };
 
-      // Substitui se já existir auditoria para este setor no mesmo dia
       db.audits = db.audits.filter(a => !(a.sector === sector && a.date === newAudit.date));
       db.audits.push(newAudit);
 
@@ -640,7 +630,6 @@
       switchTab('resultados');
     }
 
-    // --- TELA 3: RESULTADOS E MÁTRICES ---
     function renderResults() {
       const tbody = document.getElementById('resultsTableBody');
       const senses = ['1S', '2S', '3S', '4S', '5S'];
@@ -688,11 +677,8 @@
         `;
       }).join('');
 
-      // Gráfico Radar
       const globalSenseAverages = senses.map(s => senseCounts[s] ? Math.round((totalSenseScores[s] / (senseCounts[s] * 5)) * 100) : 0);
       renderChart(globalSenseAverages);
-
-      // Histórico
       renderHistory();
     }
 
@@ -746,7 +732,6 @@
       }
     }
 
-    // --- TELA 4: PLANO DE AÇÃO ---
     function renderActionPlan() {
       const tbody = document.getElementById('actionPlanTableBody');
       let lowItems = [];
@@ -754,7 +739,7 @@
       db.audits.forEach(audit => {
         Object.keys(audit.responses).forEach(qId => {
           const resp = audit.responses[qId];
-          if (resp.score < 4) { // Notas baixas (1, 2, 3)
+          if (resp.score < 4) {
             const q = db.questions.find(x => x.id === qId);
             if (q) {
               lowItems.push({
@@ -807,7 +792,6 @@
       saveDB();
     }
 
-    // --- MODAL DE FOTOS E EXPORTAÇÃO ---
     function openImageModal(src) {
       document.getElementById('imageModalSrc').src = src;
       document.getElementById('imageModal').classList.remove('hidden');
@@ -817,11 +801,8 @@
       document.getElementById('imageModal').classList.add('hidden');
     }
 
-    // Exportar para Excel (SheetJS)
     function exportToExcel() {
       const wb = XLSX.utils.book_new();
-      
-      // Aba Matriz
       const data = [
         ['Empresa:', db.config.companyName],
         ['Data:', db.config.auditDate],
@@ -872,7 +853,6 @@
       XLSX.writeFile(wb, `Plano_de_Acao_5S_${db.config.auditDate}.xlsx`);
     }
 
-    // Exportar/Importar Backup JSON
     function exportJSONBackup() {
       const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
@@ -902,7 +882,9 @@
       }
     }
   </script>
-<script>
+
+  <!-- Registro do Service Worker -->
+  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
